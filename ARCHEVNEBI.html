@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ka">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1b9869">
+<title>არჩევნები // ხმის მიცემის ჯიხური</title>
+<style>
+:root{--accent:#1b9869;--ink:#17211f;--light:#fafbf9}
+*{box-sizing:border-box}html,body{height:100%;width:100%;margin:0;overflow:hidden;font-family:"Noto Sans Georgian","DejaVu Sans",Arial,sans-serif;background:#e4e9e5;color:var(--ink);user-select:none;-webkit-user-select:none}
+#game{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#grain{position:fixed;inset:0;pointer-events:none;opacity:.11;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.23' filter='url(%23n)'/%3E%3C/svg%3E");z-index:2}
+#hud{position:absolute;inset:0;pointer-events:none;z-index:4}
+#mast{position:absolute;left:28px;top:25px;display:flex;align-items:center;gap:12px}.logo-block{width:29px;height:29px;background:var(--accent);position:relative}.logo-block:after{content:"";position:absolute;left:10px;top:4px;width:9px;height:17px;border:3px solid white;border-top:0;transform:rotate(-13deg)}.logo{font-size:21px;letter-spacing:0;font-weight:950}.micro{font-size:9px;font-weight:800;letter-spacing:.7px;color:#545e5b}
+#stateTag{position:absolute;right:30px;top:31px;font-size:10px;font-weight:950;letter-spacing:.3px;color:var(--accent);text-align:right;max-width:44vw}
+#crosshair{position:absolute;left:50%;top:50%;width:15px;height:15px;transform:translate(-50%,-50%);transition:opacity .2s;opacity:.7}
+#crosshair:before,#crosshair:after{content:"";position:absolute;background:var(--accent)}#crosshair:before{width:15px;height:2px;top:7px}#crosshair:after{width:2px;height:15px;left:7px}
+#crosshair{display:block;opacity:.24;pointer-events:none}
+body.mouse-locked #crosshair{opacity:.94}
+#lockHint{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);color:#21392e;background:#ffffffd9;padding:9px 14px;font-weight:850;font-size:10px;letter-spacing:.2px;white-space:nowrap;transition:opacity .2s}
+body.mouse-locked #lockHint{opacity:0}
+#interact{position:absolute;left:50%;bottom:93px;transform:translateX(-50%);padding:12px 17px;background:#1c2523eb;color:white;font-size:11px;font-weight:850;letter-spacing:.1px;opacity:0;transition:opacity .16s;white-space:nowrap}
+#interact.show{opacity:1}#interact kbd{font-family:inherit;border:1px solid #9fa8a2;font-size:11px;padding:4px 7px;margin-right:10px}
+#footer{position:absolute;left:28px;bottom:24px;font-size:11px;letter-spacing:0;color:#63726c;font-weight:750}#footer b{color:var(--accent)}
+#prompt{position:absolute;left:50%;bottom:29px;transform:translateX(-50%);font-size:11px;letter-spacing:.2px;font-weight:900;color:#ffffff;white-space:nowrap;opacity:0;transition:opacity .2s;text-shadow:0 1px 2px #111}
+body.focus #prompt{opacity:1}body.focus #footer{opacity:0}
+#eventTitle{position:absolute;top:7%;left:50%;transform:translate(-50%,-8px);text-align:center;pointer-events:none;opacity:0;transition:opacity .65s,transform .65s;width:95%}
+#eventTitle.show{opacity:1;transform:translate(-50%,0)}#eventTitle h1{font-size:clamp(34px,5.6vw,78px);letter-spacing:-.04em;margin:0;line-height:.95;font-weight:1000;color:var(--accent);text-shadow:0 3px 0 rgba(255,255,255,.73)}
+#eventTitle p{font-size:clamp(10px,1.5vw,14px);font-weight:950;letter-spacing:1px;margin:14px 0 0;color:#222b2b}
+#rainCount{position:absolute;top:94px;right:29px;font-size:10px;letter-spacing:0;font-weight:850;text-align:right;opacity:0;transition:opacity .3s}#rainCount.show{opacity:1}#rainCount strong{font-size:32px;color:var(--accent);display:block;line-height:1.1}
+#restart{position:absolute;right:29px;bottom:24px;pointer-events:auto;opacity:0;transform:translateY(9px);transition:opacity .3s,transform .3s;background:var(--accent);border:0;color:white;padding:11px 16px;font:900 11px "Noto Sans Georgian","DejaVu Sans",Arial,sans-serif;letter-spacing:0;cursor:pointer}#restart.show{opacity:1;transform:translateY(0)}
+#penHeld{position:absolute;right:5%;bottom:-32px;transform:translateY(230px) rotate(-12deg);transition:transform .32s cubic-bezier(.18,.83,.17,1);width:110px;height:225px;pointer-events:none;opacity:.93}
+#penHeld.visible{transform:translateY(12px) rotate(-12deg)}body.focus #penHeld{transform:translateY(210px) rotate(-12deg)}body.focus #dpad{opacity:.23;pointer-events:none}
+#penHeld .barrel{position:absolute;top:0;left:45px;transform:rotate(22deg);height:215px;width:16px;background:linear-gradient(90deg,#083e2d,var(--accent) 45%,#12573f);border:2px solid #1b2523;clip-path:polygon(5% 0,95% 0,100% 90%,53% 100%,0 90%)}#penHeld .barrel:before{content:"";position:absolute;top:0;left:2px;width:8px;height:15px;background:#252a28}#penHeld .hand{position:absolute;top:126px;left:10px;width:88px;height:130px;transform:rotate(14deg);background:#d8d3c9;clip-path:polygon(22% 0,46% 0,63% 31%,78% 18%,97% 36%,100% 100%,0 100%,0 40%)}
+#mobile{display:none;position:absolute;z-index:6;left:18px;right:18px;bottom:45px;justify-content:space-between;pointer-events:none}
+#dpad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,46px);gap:5px}#dpad button,#mobileAction{pointer-events:auto;touch-action:none;border:1px solid #27322e;background:#e8efebe0;color:#18332a;font-size:21px;font-weight:950;min-width:46px;min-height:46px}#dpad button.held{background:var(--accent);color:white}#mobileAction{align-self:end;padding:0 18px;background:var(--accent);color:white;border:0;font-size:11px;letter-spacing:0}
+@media(pointer:coarse),(max-width:640px){#mobile{display:flex}#footer{display:none}#mast{top:16px;left:16px}.logo{font-size:17px}#stateTag{right:16px;top:23px;font-size:9px}#rainCount{right:17px;top:165px}#lockHint{display:none}#restart{right:17px;bottom:18px}#interact{bottom:162px;font-size:10px}#prompt{bottom:146px;font-size:10px;letter-spacing:0;color:#17211f;text-shadow:none}#penHeld{right:-28px;transform-origin:bottom right}#penHeld.visible{transform:translateY(22px) rotate(-12deg) scale(.75)}#eventTitle{top:10%}#eventTitle h1{font-size:clamp(31px,7.7vw,55px)}}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="სამგანზომილებიანი თამაში: საარჩევნო ჯიხური"></canvas><div id="grain"></div>
+<div id="hud">
+ <div id="mast"><div class="logo-block"></div><div><div class="logo">არჩევნები</div><div class="micro">ხმის მიცემა</div></div></div>
+ <div id="stateTag">ხმა არ მიგიციათ</div><div id="crosshair"></div><div id="lockHint">დააწკაპუნეთ მაუსის დასაფიქსირებლად</div>
+ <div id="interact"><kbd>E</kbd><span id="interactText">აიღეთ კალამი</span></div>
+ <div id="footer"><b>WASD</b> მოძრაობა &nbsp; / &nbsp; მაუსი: ხედვა &nbsp; / &nbsp; <b>კლიკი / E</b> მოქმედება &nbsp; / &nbsp; <b>Esc</b> მაუსის გათავისუფლება &nbsp; / &nbsp; <b>R</b> თავიდან</div>
+ 
+ <div id="eventTitle"><h1 id="resultText">თქვენ მოიგეთ!</h1><p id="eventSubtitle">კარტოფილი ცვივა</p></div>
+ <div id="rainCount"><span id="rainLabel">ჩამოვარდნილი კარტოფილი</span><strong id="countNum">000</strong></div>
+ <button id="restart" type="button">თავიდან ცდა ↻</button>
+ <div id="penHeld"><div class="barrel"></div><div class="hand"></div></div>
+</div>
+<div id="mobile"><div id="dpad"><span></span><button data-key="w">▲</button><span></span><button data-key="a">◀</button><button data-key="s">▼</button><button data-key="d">▶</button></div><button id="mobileAction">მოქმედება</button></div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
+const $=id=>document.getElementById(id),root=document.documentElement;
+let W=0,H=0,F=750,dpr=1;
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,1.65);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);F=Math.min(W*.94,H*1.22)}addEventListener('resize',resize);resize();
+const palettes={green:[22,154,102],blue:[34,111,225],red:[223,55,62]};
+let current=[...palettes.green],target=palettes.green;
+const rgb=a=>'#'+a.map(n=>Math.round(n).toString(16).padStart(2,'0')).join('');
+function mix(c1,c2,t){let a=parseColor(c1),b=parseColor(c2);return rgb(a.map((v,i)=>v+(b[i]-v)*t))}
+function parseColor(c){if(c.startsWith('#')&&c.length===7)return [1,3,5].map(p=>parseInt(c.slice(p,p+2),16));return [244,244,241]}
+const scheme=()=>({accent:rgb(current),accentDark:mix(rgb(current),'#101d20',.43),accentLight:mix(rgb(current),'#ffffff',.61),accentPale:mix(rgb(current),'#ffffff',.86)});
+function pigment(c){let s=scheme();return s[c]||c}
+const C={x:0,y:1.73,z:5.75,yaw:0,pitch:-.035},saved={...C};
+let phase='approach',hasPen=false,vote=0,markStart=0,markProgress=0,seconds=0,prev=performance.now(),shake=0,fallCount=0,spawnClock=0,lookPointer=null;
+const keys={},world=[],falling=[];
+function poly(v,col,edge=null,layer=0){world.push({v,col,edge,layer})}
+function box(x,y,z,w,h,d,c,layer=0){let a=x-w/2,b=x+w/2,e=y-h/2,f=y+h/2,g=z-d/2,k=z+d/2;
+ const v=[[a,e,g],[b,e,g],[b,f,g],[a,f,g],[a,e,k],[b,e,k],[b,f,k],[a,f,k]];
+ const faces=[[0,1,2,3],[5,4,7,6],[4,0,3,7],[1,5,6,2],[3,2,6,7],[4,5,1,0]];
+ const cols=Array.isArray(c)?c:[c,c,c,c,c,c];for(let i=0;i<6;i++)poly(faces[i].map(j=>v[j]),cols[i]||cols[0],null,layer)
+}
+function ground(x1,z1,x2,z2,c,y=.014){poly([[x1,y,z1],[x2,y,z1],[x2,y,z2],[x1,y,z2]],c)}
+function build(){
+ // An enclosed modern voting hall. The white/black/accent look is intentionally stylized.
+ ground(-9.8,-13,9.8,9.2,'#e1e5e1',-.09);
+ ground(-8.5,-12.6,8.5,8.3,'#f1f1ed',-.035);
+ for(let x=-8;x<9;x+=2)ground(x-.012,-12.5,x+.012,8.3,'#dadfda',-.019);
+ for(let z=-12;z<9;z+=2)ground(-8.5,z-.012,8.5,z+.012,'#dbe0db',-.018);
+ // Two directional floor stripes lead into the single voting station.
+ ground(-1.57,-5.05,-1.44,6.8,'accent',-.01);ground(1.44,-5.05,1.57,6.8,'accent',-.01);
+ ground(-.1,4.45,.1,2.5,'accent',.005);
+ poly([[-.53,.025,2.6],[.53,.025,2.6],[0,.025,1.63]],'accent');
+ // Perimeter walls with recessed sections and large minimalist windows.
+ box(-8.55,2.7,-2,.27,5.6,21.2,'#e9ebe7');box(8.55,2.7,-2,.27,5.6,21.2,'#e9ebe7');
+ box(0,2.7,-12.57,17.5,5.6,.30,'#e1e5e2');box(0,2.7,8.48,17.5,5.6,.3,'#dedfda');
+ box(-8.34,2.8,-1.5,.045,2.4,9.1,'#bfc9c4');box(8.34,2.8,-1.5,.045,2.4,9.1,'#bfc9c4');
+ for(let s of [-1,1]){
+   box(s*8.21,4.23,-1.55,.09,.095,9.5,'accent');box(s*8.21,1.49,-1.55,.09,.09,9.5,'#d1d7d3');
+   for(let z=-5.9;z<=2.9;z+=2.9)box(s*8.22,2.8,z,.12,2.4,.06,'#ecefeb');
+   // Offset structural ribs and low benches.
+   for(let z of [-9.0,-.8,5.0])box(s*7.65,1.9,z,.5,3.8,.38,'#f8f9f6');
+   box(s*6.45,.38,1.0,2.8,.72,1.05,['#dde2dd','#bbc7c1','#dfe5df','#cbd3cd','#ffffff','#d4dcd6']);
+   box(s*6.45,.77,1,2.75,.10,1.1,'#1d2424');
+ }
+ // Ceiling panels; a long skylight slot is left open so the rain has somewhere to fall from.
+ box(-6.3,5.56,-2.1,4.6,.20,21.5,'#f9faf7');box(6.3,5.56,-2.1,4.6,.20,21.5,'#f9faf7');
+ box(0,5.56,-10.4,8.2,.2,4.2,'#f8f9f6');box(0,5.56,7.4,8.2,.2,2.35,'#f8f9f6');
+ for(let s of [-1,1]){box(s*3.97,5.49,-1.3,.13,.13,15.0,'accent');box(s*6.1,5.39,0,.42,.12,9.0,'#ffffff')}
+ // Back-lit election booth within the actual hall.
+ box(0,.055,-8.0,6.3,.13,6.0,'#e5e8e2');
+ box(-2.72,1.56,-7.87,.22,3.15,5.65,'#bfc9c4');box(2.72,1.56,-7.87,.22,3.15,5.65,'#bfc9c4');
+ box(-2.72,1.67,-7.9,.16,2.85,5.3,'#f2f3ef');box(2.72,1.67,-7.9,.16,2.85,5.3,'#f2f3ef');
+ box(0,1.6,-10.71,5.9,3.28,.25,'#d0d9d3');
+ box(-2.72,2.75,-4.95,.31,5.25,.28,'accent');box(2.72,2.75,-4.95,.31,5.25,.28,'accent');
+ box(0,3.28,-4.95,5.1,1.02,.22,'#202827'); // Sign background.
+ box(0,3.85,-4.97,5.6,.11,.30,'accent');
+ box(0,4.22,-7.8,5.7,.12,5.85,'#f8f9f5');
+ // A genuinely low, short writing table. The ballot lies flat on its surface.
+ for(let x of [-1.44,1.44])for(let z of [-8.13,-7.04])box(x,.475,z,.105,.95,.105,'#333d37');
+ box(0,.965,-7.57,3.24,.12,1.63,['#343e39','#202b25','#29342e','#222d27','#404a43','#202823']);
+ box(0,1.030,-7.57,3.15,.012,1.54,'#c9d2cb');
+ // Ballot's dark backing is barely higher than the tabletop, not a display stand.
+ poly([[-1.105,1.044,-8.22],[1.105,1.044,-8.22],[1.105,1.044,-6.85],[-1.105,1.044,-6.85]],'#637369');
+ // The pen is rendered as a separate foreground 3D prop, removable on pickup.
+ // A few civic-hall touches, all deliberately text-free.
+ box(-5.9,1.2,-7.5,.18,2.42,.18,'#2e3934');box(-5.9,2.44,-7.5,1.35,.12,.26,'accent');
+ box(5.9,1.2,-7.5,.18,2.42,.18,'#2e3934');box(5.9,2.44,-7.5,1.35,.12,.26,'accent');
+ for(let s of [-1,1]){box(s*5.3,.14,5.1,1.1,.28,1.1,'#252e29');box(s*5.3,.69,5.1,.64,.95,.64,'accentDark')}
+}build();
+// Corners in paper texture order: top-left, top-right, bottom-right, bottom-left.
+const paperQuad=[[-1.072,1.050,-8.185],[1.072,1.050,-8.185],[1.072,1.050,-6.888],[-1.072,1.050,-6.888]];
+const signQuad=[[-2.20,3.56,-4.805],[2.20,3.56,-4.805],[2.20,2.99,-4.805],[-2.20,2.99,-4.805]];
+const paperTex=document.createElement('canvas');paperTex.width=900;paperTex.height=630;
+const signTex=document.createElement('canvas');signTex.width=1024;signTex.height=180;
+const st=signTex.getContext('2d'),pt=paperTex.getContext('2d');
+function drawSign(){st.clearRect(0,0,1024,180);st.fillStyle='#1a2420';st.fillRect(0,0,1024,180);st.fillStyle='#f7faf6';st.textAlign='center';st.textBaseline='middle';st.font='900 111px "Noto Sans Georgian","DejaVu Sans",sans-serif';st.fillText('არჩევნები',512,92,925)}drawSign();
+function makePaper(){
+ pt.clearRect(0,0,900,630);pt.fillStyle='#fffef8';pt.fillRect(0,0,900,630);
+ pt.strokeStyle='#cbd1c7';pt.lineWidth=7;pt.strokeRect(16,16,868,598);
+ pt.fillStyle='#24372b';pt.fillRect(39,40,822,7);
+ pt.font='900 43px "Noto Sans Georgian","DejaVu Sans",sans-serif';pt.textAlign='left';pt.fillText('არჩევნები',52,108);
+ pt.fillStyle='#55675b';pt.font='800 22px "Noto Sans Georgian","DejaVu Sans",sans-serif';pt.fillText('საარჩევნო ბიულეტენი / შემოხაზეთ ერთი',52,151,788);
+ pt.strokeStyle='#d3d9d2';pt.lineWidth=4;pt.beginPath();pt.moveTo(48,174);pt.lineTo(852,174);pt.stroke();
+ // Large clickable numbers visible on the paper itself from a standing view.
+ pt.fillStyle='#f4f5ed';pt.fillRect(48,199,384,343);pt.fillRect(467,199,385,343);
+ pt.strokeStyle='#aebbb0';pt.lineWidth=4;pt.strokeRect(48,199,384,343);pt.strokeRect(467,199,385,343);
+ pt.fillStyle='#152820';pt.textAlign='center';pt.font='900 224px "Noto Sans Georgian","DejaVu Sans",sans-serif';pt.fillText('41',240,442);pt.fillText('5',660,442);
+ pt.textAlign='left';pt.fillStyle='#7a887d';pt.font='800 19px "Noto Sans Georgian","DejaVu Sans",sans-serif';pt.fillText('მონიშნეთ მხოლოდ ერთი ნომერი',52,587,772);
+ if(vote&&markProgress>0){const cx=vote===41?240:660,cy=369;
+  pt.strokeStyle='#168c55';pt.lineWidth=16;pt.lineCap='round';pt.lineJoin='round';pt.beginPath();let steps=Math.max(1,Math.ceil(markProgress*90));
+  for(let i=0;i<=steps;i++){let a=-.29+2*Math.PI*i/90,x=cx+160*Math.cos(a),y=cy+150*Math.sin(a);if(i===0)pt.moveTo(x,y);else pt.lineTo(x,y)}pt.stroke()}
+}
+
+function cam(p){let dx=p[0]-C.x,dy=p[1]-C.y,dz=p[2]-C.z,cy=Math.cos(C.yaw),sy=Math.sin(C.yaw),cp=Math.cos(C.pitch),sp=Math.sin(C.pitch),forward=dx*sy-dz*cy;return {x:dx*cy+dz*sy,y:dy*cp-forward*sp,z:forward*cp+dy*sp}}
+function clip(v){let a=[];for(let i=0;i<v.length;i++){let p=v[i],q=v[(i+1)%v.length],pin=p.z>.09,qin=q.z>.09;if(pin)a.push(p);if(pin!==qin){let t=(.09-p.z)/(q.z-p.z);a.push({x:p.x+(q.x-p.x)*t,y:p.y+(q.y-p.y)*t,z:.09})}}return a}
+function project(p){return {x:W/2+p.x*F/p.z,y:H/2-p.y*F/p.z,z:p.z}}
+function quadProjected(q){return q.map(x=>cam(x)).map(p=>p.z>.10?project(p):null)}
+function polygon(v,c,list,layer=0){let cp=clip(v.map(cam));if(cp.length<3)return;let depth=cp.reduce((s,v)=>s+v.z,0)/cp.length;if(depth>70)return;let pp=cp.map(project);if(pp.every(p=>p.x<-30)||pp.every(p=>p.x>W+30)||pp.every(p=>p.y<-30)||pp.every(p=>p.y>H+30))return;list.push({type:'face',p:pp,c,depth,layer})}
+function texturedQuad(q,texture,list,layer=1,subdiv=1){
+ if(subdiv===1){const cc=q.map(cam);if(cc.some(p=>p.z<=.12))return;let dst=cc.map(project),depth=cc.reduce((s,p)=>s+p.z,0)/4;list.push({type:'texture',p:dst,tex:texture,depth:depth-.022,layer});return}
+ const n=subdiv,m=Math.max(4,Math.round(subdiv*.7));
+ const lerp=(a,b,f)=>a+(b-a)*f;
+ const point=(u,v)=>[0,1,2].map(i=>lerp(lerp(q[0][i],q[1][i],u),lerp(q[3][i],q[2][i],u),v));
+ for(let j=0;j<m;j++)for(let i=0;i<n;i++){
+  let u0=i/n,u1=(i+1)/n,v0=j/m,v1=(j+1)/m;
+  let corners=[point(u0,v0),point(u1,v0),point(u1,v1),point(u0,v1)].map(cam);
+  if(corners.some(p=>p.z<=.12))continue;
+  let p=corners.map(project);
+  let triangles=[[0,1,2],[0,2,3]],texcoords=[[u0,v0],[u1,v0],[u1,v1],[u0,v1]];
+  for(let ids of triangles)list.push({type:'texturetri',p:ids.map(k=>p[k]),uv:ids.map(k=>texcoords[k]),tex:texture,
+      depth:-100+ids.reduce((a,k)=>a+corners[k].z,0)/3000,layer})
+ }
+}
+function textureTriangle(src,coords,uv){
+ const mx=(coords[0].x+coords[1].x+coords[2].x)/3,my=(coords[0].y+coords[1].y+coords[2].y)/3;
+ const q=coords.map(p=>{let vx=p.x-mx,vy=p.y-my,r=Math.hypot(vx,vy)||1;return{x:p.x+vx/r*.62,y:p.y+vy/r*.62}});
+ const x0=q[0].x,y0=q[0].y,x1=q[1].x,y1=q[1].y,x2=q[2].x,y2=q[2].y;
+ const u0=uv[0][0]*src.width,v0=uv[0][1]*src.height,u1=uv[1][0]*src.width,v1=uv[1][1]*src.height,u2=uv[2][0]*src.width,v2=uv[2][1]*src.height;
+ let det=(u0-u2)*(v1-v2)-(u1-u2)*(v0-v2);if(Math.abs(det)<.001)return;
+ let a=((x0-x2)*(v1-v2)-(x1-x2)*(v0-v2))/det,b=((y0-y2)*(v1-v2)-(y1-y2)*(v0-v2))/det;
+ let c=((u0-u2)*(x1-x2)-(u1-u2)*(x0-x2))/det,d=((u0-u2)*(y1-y2)-(u1-u2)*(y0-y2))/det;
+ let e=x0-a*u0-c*v0,f=y0-b*u0-d*v0;
+ ctx.save();ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.lineTo(x2,y2);ctx.closePath();ctx.clip();ctx.setTransform(dpr*a,dpr*b,dpr*c,dpr*d,dpr*e,dpr*f);ctx.drawImage(src,0,0);ctx.restore();
+}
+function texturing(item){if(item.type==='texturetri'){textureTriangle(item.tex,item.p,item.uv);return}let p=item.p,t=item.tex;textureTriangle(t,[p[0],p[1],p[2]],[[0,0],[1,0],[1,1]]);textureTriangle(t,[p[0],p[2],p[3]],[[0,0],[1,1],[0,1]])}
+function faceDraw(item){ctx.beginPath();let a=item.p;ctx.moveTo(a[0].x,a[0].y);for(let i=1;i<a.length;i++)ctx.lineTo(a[i].x,a[i].y);ctx.closePath();ctx.fillStyle=pigment(item.c);ctx.fill();if(item.layer===3){ctx.strokeStyle='#2b3b2d';ctx.lineWidth=.6;ctx.stroke()}}
+function dynFace(points,color,list){polygon(points,color,list,3)}
+function dynamicBox(list,x,y,z,w,h,d,color,angle=0,tilt=0){let cx=Math.cos(angle),sx=Math.sin(angle),ct=Math.cos(tilt),st1=Math.sin(tilt);
+ const vertices=[];for(let i=0;i<8;i++){let xx=(i&1?w/2:-w/2),yy=(i&2?h/2:-h/2),zz=(i&4?d/2:-d/2);let ry=xx*sx+yy*cx,rx=xx*cx-yy*sx;let rz=zz*ct+ry*st1;ry=ry*ct-zz*st1;vertices.push([x+rx,y+ry,z+rz])}
+ const faces=[[0,1,3,2],[5,4,6,7],[4,0,2,6],[1,5,7,3],[2,3,7,6],[4,5,1,0]];
+ for(let i=0;i<6;i++)dynFace(faces[i].map(k=>vertices[k]),color,list)
+}
+// All falling items use genuinely volumetric, rotating meshes, not flat sprites.
+const clamp255=n=>Math.max(0,Math.min(255,Math.round(n)));
+function shaded(a,brightness){return rgb(a.map(c=>clamp255(c*brightness)))}
+function local3(t,x,y,z){let cr=Math.cos(t.roll),sr=Math.sin(t.roll),ca=Math.cos(t.spin),sa=Math.sin(t.spin);
+ let x1=x*cr-y*sr,y1=x*sr+y*cr;
+ return [t.x+x1*ca-z*sa,t.y+y1,t.z+x1*sa+z*ca]}
+function cylindermesh(t,list,r1,r2,ylow,yhigh,sides,color,seed=0){
+ for(let k=0;k<sides;k++){let a=k*2*Math.PI/sides,b=(k+1)*2*Math.PI/sides;
+  const q=[[r1*Math.cos(a),ylow,r1*Math.sin(a)],[r1*Math.cos(b),ylow,r1*Math.sin(b)],
+    [r2*Math.cos(b),yhigh,r2*Math.sin(b)],[r2*Math.cos(a),yhigh,r2*Math.sin(a)]];
+  let light=.73+.29*Math.max(0,Math.cos((a+b)/2-.65))+.09*Math.sin(k*5+seed);
+  dynFace(q.map(p=>local3(t,...p)),shaded(color,light),list)}
+}
+function potatoFace(points,color,list){
+ const [a,b,c]=points,u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];
+ const normal=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+ const toViewer=[C.x-a[0],C.y-a[1],C.z-a[2]];
+ if(normal[0]*toViewer[0]+normal[1]*toViewer[1]+normal[2]*toViewer[2]<0)return;
+ polygon(points,color,list,7)
+}
+function potato(t,list){
+ const s=t.size,rows=11,cols=18,base=[188,153,103],vertices=[];
+ const surf=(th,an)=>{const wave=Math.sin(an*3.2+t.seed*1.5)*Math.sin(th*3.7+t.seed*.3);
+  let n=1+.053*Math.sin(th*4.3+an*2.1+t.seed)+.023*Math.sin(an*6.4-th*2.1+t.seed*2)+.020*wave;
+  return [Math.sin(th)*Math.cos(an)*s*.92*n,Math.cos(th)*s*1.20*n,Math.sin(th)*Math.sin(an)*s*.83*n]};
+ for(let i=0;i<=rows;i++)for(let j=0;j<=cols;j++)vertices.push(local3(t,...surf(i*Math.PI/rows,j*2*Math.PI/cols)));
+ for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){
+  let k=i*(cols+1)+j,th=(i+.5)*Math.PI/rows,an=(j+.5)*2*Math.PI/cols;
+  let grain=.98+.055*Math.sin(i*17+j*8+t.seed*19)+.03*Math.sin(i*6.8-j*3.3+t.seed*3);
+  let sun=.76+.23*Math.sin(th)*Math.cos(an-1.0)+.11*Math.cos(th);
+  const speckle=Math.sin(j*19.4+i*17.3+t.seed*4.6)> .88? .88:1;
+  potatoFace([vertices[k],vertices[k+1],vertices[k+cols+2],vertices[k+cols+1]],shaded(base,grain*sun*speckle),list);
+ }
+ // Dark recessed potato eyes, rims, and fine dirt marks anchored to its skin.
+ for(let eye=0;eye<13;eye++){
+  let th=.35+(eye*.497+t.seed*.31)%(Math.PI-.7),an=(eye*2.399+t.seed*2.14)%(Math.PI*2);
+  let p=surf(th,an),normal=[p[0]/(s*s*.85),p[1]/(s*s*1.40),p[2]/(s*s*.74)],nm=Math.hypot(...normal);normal=normal.map(v=>v/nm);
+  let v1=[-Math.sin(an),0,Math.cos(an)],v2=[Math.cos(th)*Math.cos(an),-Math.sin(th),Math.cos(th)*Math.sin(an)];
+  let disk=(rad,up,color)=>{let polygonPoints=[];for(let i=0;i<7;i++){
+   let a=i*2*Math.PI/7,x=p[0]+normal[0]*up+rad*(Math.cos(a)*v1[0]+Math.sin(a)*v2[0]),
+   y=p[1]+normal[1]*up+rad*(Math.cos(a)*v1[1]+Math.sin(a)*v2[1]),
+   z=p[2]+normal[2]*up+rad*(Math.cos(a)*v1[2]+Math.sin(a)*v2[2]);polygonPoints.push(local3(t,x,y,z))}
+   dynFace(polygonPoints,color,list)};
+  disk(s*.056,s*.031,'#927449');disk(s*.028,s*.037,'#5e4a32')
+ }
+}
+function broom(t,list){
+ const s=t.size;
+ // A long round wooden shaft with directional wood-grain shading and a dark end cap.
+ cylindermesh(t,list,s*.050,s*.046,-.94*s,1.65*s,9,[167,109,61],t.seed);
+ cylindermesh(t,list,s*.047,s*.047,1.64*s,1.75*s,9,[78,54,42],t.seed);
+ // Narrow metal/brass socket secures the brush to the wooden handle.
+ cylindermesh(t,list,s*.09,s*.073,-1.05*s,-.79*s,10,[115,112,91],t.seed);
+ // Bristle core: a densely layered straw fan that spreads toward the floor.
+ const N=24,top=-1.00*s,middle=-1.16*s,bottom=-1.75*s;
+ for(let j=0;j<N;j++){
+  let u=j/N,v=(j+1)/N,x1=(u-.5),x2=(v-.5),noise=Math.sin(j*4.5+t.seed*13);
+  let color=[175+17*Math.sin(j*3+t.seed),138+17*Math.sin(j*2.4+t.seed),79+13*Math.sin(j*5.1+t.seed)];
+  let a=local3(t,x1*s*.25,top,-.095*s),b=local3(t,x2*s*.25,top,-.095*s),
+      c=local3(t,x2*s*1.04,bottom+s*.04*noise,-.13*s),d=local3(t,x1*s*1.04,bottom+s*.04*noise,-.13*s);
+  dynFace([a,b,c,d],shaded(color,.92),list);
+  a=local3(t,x1*s*.25,top,.095*s);b=local3(t,x2*s*.25,top,.095*s);
+  c=local3(t,x2*s*1.04,bottom+s*.035*noise,.15*s);d=local3(t,x1*s*1.04,bottom+s*.035*noise,.15*s);
+  dynFace([d,c,b,a],shaded(color,.72),list)
+ }
+ // The individual tapered straw fibers produce a recognizable real broom silhouette.
+ for(let j=0;j<38;j++){
+  let k=j/37-.5,noise=Math.sin(j*47.21+t.seed*15),tail=-1.79*s+s*.11*noise;
+  let start=local3(t,k*.23*s,middle,(j%5-2)*.035*s),
+      e1=local3(t,k*1.07*s,tail,(j%7-3)*.04*s),
+      e2=local3(t,(k*1.07+.015)*s,tail+.028*s,(j%7-3)*.04*s);
+  dynFace([start,e1,e2],j%3===0?'#e7c58b':j%3===1?'#9e7646':'#c4a16c',list)
+ }
+ // Wrapping strip around the binding, including an exposed beveled lip.
+ cylindermesh(t,list,s*.155,s*.135,-1.12*s,-1.045*s,10,[108,84,58],t.seed)
+}
+function scene(){let bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,mix('#e9eeeb',rgb(current),vote?.10:.065));bg.addColorStop(1,mix('#edf0ec',rgb(current),vote?.19:.08));ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+ let faces=[];for(let o of world)polygon(o.v,o.col,faces,o.layer)
+ texturedQuad(signQuad,signTex,faces,5);makePaper();texturedQuad(paperQuad,paperTex,faces,6,10);
+ if(vote){for(let t of falling){let r=t.size*.5;dynFace([[t.x-r,.001,t.z-r],[t.x+r,.001,t.z-r],[t.x+r,.001,t.z+r],[t.x-r,.001,t.z+r]],'#c2c9c1',faces);if(vote===41)potato(t,faces);else broom(t,faces)}}
+ faces.sort((a,b)=>b.depth-a.depth||a.layer-b.layer);
+ ctx.save();if(shake>.1)ctx.translate(Math.sin(seconds*41)*shake,Math.cos(seconds*47)*shake*.75);
+ for(let f of faces){if(f.type==='texture'||f.type==='texturetri')texturing(f);else faceDraw(f)}
+ if(!hasPen){let prop=[];
+  dynamicBox(prop,.62,1.079,-7.08,.085,.057,.69,'accent');
+  dynamicBox(prop,.62,1.085,-6.75,.10,.06,.08,'#17251f');
+  dynamicBox(prop,.62,1.083,-7.40,.098,.06,.13,'#d1d6d0');
+  prop.sort((a,b)=>b.depth-a.depth);for(let f of prop)faceDraw(f)
+ }
+ ctx.restore();
+ // Focus-ring on pen, visible only when the player is within range.
+ if(!hasPen&&phase==='approach'&&distanceToPen()<4.1){const center=project(cam([.62,1.12,-7.08]));if(isFinite(center.x)&&cam([.62,1.12,-7.08]).z>.1){ctx.beginPath();ctx.arc(center.x,center.y,10+Math.sin(seconds*4)*2,0,Math.PI*2);ctx.strokeStyle=rgb(current);ctx.lineWidth=2.5;ctx.stroke()}}
+}
+function bary(pt,a,b,c){let d=(b.y-c.y)*(a.x-c.x)+(c.x-b.x)*(a.y-c.y);if(Math.abs(d)<.01)return null;let wa=((b.y-c.y)*(pt.x-c.x)+(c.x-b.x)*(pt.y-c.y))/d,wb=((c.y-a.y)*(pt.x-c.x)+(a.x-c.x)*(pt.y-c.y))/d,wc=1-wa-wb;return wa>=-.02&&wb>=-.02&&wc>=-.02?[wa,wb,wc]:null}
+function paperUV(x,y){
+ // Direct geometric hit test against the horizontal 3D paper, perspective-correct.
+ const px=(x-W/2)/F,py=-(y-H/2)/F,cy=Math.cos(C.yaw),sy=Math.sin(C.yaw),cp=Math.cos(C.pitch),sp=Math.sin(C.pitch);
+ const forward=cp-py*sp,dy=sp+py*cp,dx=px*cy+forward*sy,dz=px*sy-forward*cy;
+ if(Math.abs(dy)<1e-5)return null;
+ const t=(paperQuad[0][1]-C.y)/dy;
+ if(t<=0)return null;
+ const u=(C.x+dx*t-paperQuad[0][0])/(paperQuad[1][0]-paperQuad[0][0]);
+ const v=(C.z+dz*t-paperQuad[0][2])/(paperQuad[3][2]-paperQuad[0][2]);
+ return u>=0&&u<=1&&v>=0&&v<=1?{u,v}:null
+}
+function distanceToPen(){return Math.hypot(C.x-.62,C.z+7.08)}
+function distanceToPaper(){return Math.hypot(C.x,C.z+7.5)}
+function penHit(x,y){let p=cam([.62,1.08,-7.08]);if(p.z<=0)return false;let scr=project(p);return Math.hypot(x-scr.x,y-scr.y)<Math.max(20,F*.30/p.z)}
+function ballotChoice(uv){if(!uv||uv.v<.30||uv.v>.88)return 0;
+ if(uv.u>.053&&uv.u<.48)return 41;
+ if(uv.u>.52&&uv.u<.948)return 5;
+ return 0}
+function interactAt(x,y){if(vote)return;
+ if(!hasPen&&distanceToPen()<3.8&&penHit(x,y)){grabPen();return}
+ // The 3D ballot IS the input. No pop-up, zoom, or second step.
+ if(hasPen&&distanceToPaper()<3.85){const choice=ballotChoice(paperUV(x,y));if(choice){select(choice);return}}
+}
+function grabPen(){if(hasPen||vote)return;hasPen=true;phase='ready';$('penHeld').classList.add('visible');$('stateTag').textContent='კალამი აღებულია';sfx(640,.09,'triangle',.035)}
+function select(n){if(vote||!hasPen)return;vote=n;phase=n===41?'win':'lose';markProgress=.001;markStart=seconds;target=palettes[n===41?'blue':'red'];$('stateTag').textContent=n===41?'ხმა მიღებულია':'ხმა უარყოფილია';$('resultText').textContent=n===41?'თქვენ მოიგეთ!':'თქვენ წააგეთ!';$('eventSubtitle').textContent=n===41?'კარტოფილი ცვივა':'ცოცხები ცვივა';$('rainLabel').textContent=n===41?'ჩამოვარდნილი კარტოფილი':'ჩამოვარდნილი ცოცხები';$('countNum').textContent='000';$('rainCount').classList.add('show');$('eventTitle').classList.add('show');$('restart').classList.add('show');$('restart').textContent=n===41?'ხელახლა დაწყება ↻':'თავიდან ცდა ↻';
+ $('penHeld').classList.remove('visible');sfx(n===41?820:165,.45,n===41?'triangle':'sawtooth',.055);
+ // Stay physically where the player marked the ballot; normal movement resumes.
+ // Continue from the exact viewpoint where the vote happened.
+}
+function spawn(){let nearPlayer=Math.random()<.78,side=(Math.random()-.5)*6.6,ahead=1+Math.random()*5.6,
+  px=nearPlayer?C.x+Math.sin(C.yaw)*ahead+Math.cos(C.yaw)*side:(Math.random()-.5)*15.4,
+  pz=nearPlayer?C.z-Math.cos(C.yaw)*ahead+Math.sin(C.yaw)*side:-11.7+Math.random()*19,t={
+ x:Math.max(-7.65,Math.min(7.65,px)),y:5.2+Math.random()*6.5,z:Math.max(-11.7,Math.min(7.2,pz)),
+ vx:(Math.random()-.5)*3,vy:-(.3+Math.random()*1.3),vz:(Math.random()-.5)*3,size:vote===41?.34+Math.random()*.23:.42+Math.random()*.18,spin:Math.random()*6.28,roll:Math.random()*6.28,vr:(Math.random()-.5)*8,vs:(Math.random()-.5)*7,seed:Math.random()*9,joints:[0,1,2,3].map(()=>Math.random()*6.28),bounces:0};
+ falling.push(t);fallCount++;$('countNum').textContent=String(fallCount).padStart(3,'0');if(falling.length>(matchMedia('(pointer:coarse)').matches?34:46))falling.shift()}
+function rainStep(dt){spawnClock+=dt;let interval=vote===41?.19:.23;while(spawnClock>interval){spawnClock-=interval;spawn()}
+ for(let t of falling){t.vy-=13.7*dt;t.x+=t.vx*dt;t.y+=t.vy*dt;t.z+=t.vz*dt;t.roll+=t.vr*dt;t.spin+=t.vs*dt;
+  t.x=Math.min(8.05,Math.max(-8.05,t.x));t.z=Math.min(7.7,Math.max(-12.05,t.z));
+  const floor=vote===41?t.size*.93:t.size*1.65;
+  if(t.y<floor){t.y=floor;if(Math.abs(t.vy)>1){t.vy=-t.vy*(t.bounces<2?.28:.16);t.bounces++;t.vx*=.78;t.vz*=.78;t.vr*=.65;t.vs*=.65}else{t.vy=0;t.vx*=.96;t.vz*=.96;t.vr*=.94;t.vs*=.94}}
+  if(t.y<2.5&&t.vy<0&&Math.hypot(t.x-C.x,t.z-C.z)<.72){shake=Math.min(6,shake+3.4);t.vy+=3;t.vx+=(t.x-C.x)*4;t.vz+=(t.z-C.z)*4}
+ }
+}
+let audio=null;function sfx(freq=400,len=.12,type='triangle',vol=.04){try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;audio=audio||new Audio();let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);o.frequency.exponentialRampToValueAtTime(Math.max(44,freq*.6),audio.currentTime+len);g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+len);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+len)}catch(e){}}
+function reset(){vote=0;hasPen=false;phase='approach';falling.length=0;fallCount=0;spawnClock=0;markProgress=0;target=palettes.green;current=[...palettes.green];C.x=0;C.y=1.73;C.z=5.75;C.yaw=0;C.pitch=-.035;Object.keys(keys).forEach(k=>keys[k]=false);root.style.setProperty('--accent',rgb(current));$('penHeld').classList.remove('visible');$('eventTitle').classList.remove('show');$('rainCount').classList.remove('show');$('restart').classList.remove('show');$('stateTag').textContent='ხმა არ მიგიციათ'}
+function move(dt){
+ let fw=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0),st=(keys.d?1:0)-(keys.a?1:0);
+ if(fw||st){let n=Math.hypot(fw,st),speed=(keys.shift?5.9:3.6)*dt,dx=(Math.sin(C.yaw)*fw+Math.cos(C.yaw)*st)*speed/n,dz=(-Math.cos(C.yaw)*fw+Math.sin(C.yaw)*st)*speed/n;
+ let nx=Math.max(-7.85,Math.min(7.85,C.x+dx)),nz=Math.max(-11.55,Math.min(7.75,C.z+dz));
+ if(nz<-5.15&&nz>-10.58&&Math.abs(nx)>2.38&&Math.abs(nx)<2.99)nx=Math.sign(nx)*2.99;
+ if(nz< -5.36&&nz> -8.5&&Math.abs(nx)<1.90)nz=Math.max(nz,-5.36);
+ C.x=nx;C.z=nz;C.y=1.73+Math.sin(seconds*(keys.shift?16:12))*.024;
+ }else C.y+=(1.73-C.y)*Math.min(1,dt*8)
+}
+function ui(){root.style.setProperty('--accent',rgb(current));
+ $('interact').classList.remove('show');
+ if(vote){$('mobileAction').style.display='none';return}
+ const nearPen=!hasPen&&distanceToPen()<3.8, nearPaper=hasPen&&distanceToPaper()<3.85;
+ const aimingPen=nearPen&&penHit(W/2,H/2),aimedChoice=nearPaper?ballotChoice(paperUV(W/2,H/2)):0;
+ // Desktop prompts track the actual crosshair, not the invisible locked mouse position.
+ $('interact').classList.toggle('show',isLocked()&&(aimingPen||!!aimedChoice));
+ $('interactText').textContent=aimingPen?'კლიკი / E — აიღეთ კალამი':'კლიკი / E — ხმა მიეცით '+aimedChoice;
+ $('mobileAction').style.display=hasPen?'none':'';
+ $('mobileAction').textContent=nearPen?'აიღეთ კალამი':'მოქმედება';
+}
+function loop(t){let dt=Math.min(.04,(t-prev)/1000||0);prev=t;seconds+=dt;
+ for(let i=0;i<3;i++)current[i]+=(target[i]-current[i])*Math.min(1,dt*3.2);
+ if(vote&&markProgress<1)markProgress=Math.min(1,(seconds-markStart)/.55);
+ move(dt);if(vote)rainStep(dt);if(shake>.05)shake*=Math.pow(.08,dt);else shake=0;
+ scene();ui();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+function isLocked(){return document.pointerLockElement===canvas}
+function takeAction(force=false){
+ if(!hasPen&&distanceToPen()<3.8&&(force||penHit(W/2,H/2)))grabPen();
+ else if(hasPen&&!vote&&distanceToPaper()<3.85){const choice=ballotChoice(paperUV(W/2,H/2));if(choice)select(choice)}
+}
+function key(e,on){let k=e.key.toLowerCase();
+ if(on&&k==='escape'&&isLocked()){document.exitPointerLock();return}
+ if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift','e','r','escape',' '].includes(k))e.preventDefault();
+ if(on&&!keys[k]){if(k==='e')takeAction();if(k==='r')reset()}
+ keys[k]=on
+}
+addEventListener('keydown',e=>key(e,true));
+addEventListener('keyup',e=>key(e,false));
+addEventListener('blur',()=>Object.keys(keys).forEach(k=>keys[k]=false));
+// Desktop: genuine FPS mouse look using the browser Pointer Lock API.
+// The first click captures the pointer; subsequent left clicks interact at screen center.
+canvas.addEventListener('pointerdown',e=>{
+ if(e.pointerType==='mouse'){
+  if(e.button!==0)return;
+  e.preventDefault();
+  if(!isLocked()){
+   const lock=canvas.requestPointerLock();
+   if(lock&&typeof lock.catch==='function')lock.catch(()=>{});
+   return
+  }
+  interactAt(W/2,H/2);
+  return
+ }
+ // Touch / stylus retains drag-to-look and tap-to-interact functionality.
+ lookPointer={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,dragged:false};
+ canvas.setPointerCapture(e.pointerId)
+});
+document.addEventListener('pointerlockchange',()=>{
+ document.body.classList.toggle('mouse-locked',isLocked());
+ if(isLocked())lookPointer=null;
+});
+document.addEventListener('mousemove',e=>{
+ if(!isLocked())return;
+ C.yaw+=e.movementX*.0027;
+ C.pitch=Math.max(-1.3,Math.min(1.3,C.pitch-e.movementY*.0025));
+});
+canvas.addEventListener('pointermove',e=>{
+ if(e.pointerType==='mouse'||!lookPointer||lookPointer.id!==e.pointerId)return;
+ const dx=e.clientX-lookPointer.x,dy=e.clientY-lookPointer.y;
+ if(Math.abs(e.clientX-lookPointer.startX)+Math.abs(e.clientY-lookPointer.startY)>9)lookPointer.dragged=true;
+ if(lookPointer.dragged){C.yaw+=dx*.0047;C.pitch=Math.max(-1.3,Math.min(1.3,C.pitch-dy*.0041))}
+ lookPointer.x=e.clientX;lookPointer.y=e.clientY
+});
+canvas.addEventListener('pointerup',e=>{
+ if(lookPointer&&lookPointer.id===e.pointerId){
+  if(!lookPointer.dragged)interactAt(e.clientX,e.clientY);
+  lookPointer=null
+ }
+});
+addEventListener('pointerup',e=>{if(lookPointer&&lookPointer.id===e.pointerId)lookPointer=null});
+canvas.addEventListener('pointercancel',()=>lookPointer=null);
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+for(let b of document.querySelectorAll('[data-key]')){let k=b.dataset.key;b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();b.setPointerCapture(e.pointerId);keys[k]=true;b.classList.add('held')});let off=()=>{keys[k]=false;b.classList.remove('held')};b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('lostpointercapture',off)}
+$('mobileAction').addEventListener('click',()=>{if(vote){reset();return}takeAction(true)});$('restart').addEventListener('click',reset);
+
+window.__boothQA={get objects(){return falling},get state(){return {phase,hasPen,vote,fallCount,theme:rgb(current),camera:{...C}}},setCamera(v){Object.assign(C,v)},pen:grabPen,choose:select,reset,project(point){return project(cam(point))},paperUV,ballotChoice,click:interactAt};
+})();
+</script>
+</body>
+</html>
